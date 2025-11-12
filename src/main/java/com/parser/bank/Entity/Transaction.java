@@ -18,8 +18,10 @@ public class Transaction {
 	private Double closingBalance;
 	private String description; // narration
 	private String category;
+    private Boolean include;
 
-	public String getCategory() {
+
+    public String getCategory() {
 		return category;
 	}
 
@@ -68,7 +70,7 @@ public class Transaction {
 	}
 
 	public Transaction(String id, LocalDate transactionDate, Double withdrawalAmount, Double depositAmount,
-			Double closingBalance, String description, String category) {
+			Double closingBalance, String description, String category, Boolean include) {
 		super();
 		this.id = id;
 		this.transactionDate = transactionDate;
@@ -77,7 +79,16 @@ public class Transaction {
 		this.closingBalance = closingBalance;
 		this.description = description;
 		this.category = category;
+        this.include = include;
 	}
+
+    public Boolean getInclude() {
+        return include;
+    }
+
+    public void setInclude(Boolean include) {
+        this.include = include;
+    }
 
 	public String getId() {
 		return id;
