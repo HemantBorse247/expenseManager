@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 import com.parser.bank.DTO.CustomSummaryRequest;
+import com.parser.bank.Entity.Category;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -107,6 +108,15 @@ public class TransactionController {
             return transactionService.setCategoryForTransactions();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new UploadResponse(e.getMessage(), 0));
+        }
+    }
+
+    @GetMapping("/category")
+    public ResponseEntity<List<Category>> getCategory() {
+        try {
+            return transactionService.getCategory();
+        }catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ArrayList<>());
         }
     }
 }

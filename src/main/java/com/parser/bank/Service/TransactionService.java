@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 
 //import com.example.banktransactionanalyzer.model.Transaction;
 //import com.example.banktransactionanalyzer.repository.TransactionRepository;
+import com.parser.bank.Entity.Category;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DateUtil;
@@ -34,19 +35,23 @@ import com.parser.bank.DTO.MonthlySummaryResponse;
 import com.parser.bank.DTO.UploadResponse;
 import com.parser.bank.Entity.Transaction;
 import com.parser.bank.Repository.TransactionRepository;
+import com.parser.bank.Repository.CategoryRepository;
 
 @Service
 public class TransactionService {
 
 	private final TransactionRepository transactionRepository;
 
+    private final CategoryRepository categoryRepository;
+
 	final List<String> categoryList = Arrays.asList("bills", "entertainment", "food", "utility", "travel", "snacks",
 			"groceries", "fruits", "rent", "auto", "bus", "tea", "dmart", "haircut", "swiggy", "zepto", "zomato",
 			"blinkit", "instamart", "shopping");
 
-	public TransactionService(TransactionRepository transactionRepository) {
+	public TransactionService(TransactionRepository transactionRepository, CategoryRepository categoryRepository) {
 		this.transactionRepository = transactionRepository;
-	}
+        this.categoryRepository = categoryRepository;
+    }
 
 	public List<Transaction> processExcelFile(MultipartFile file) throws IOException {
 		List<Transaction> transactions = new ArrayList<>();
@@ -284,4 +289,8 @@ public class TransactionService {
 
 		return summary;
 	}
+
+    public ResponseEntity<List<Category>> getCategory() {
+        return ResponseEntity.status(HttpStatus.OK).body(categoryRepository.findAll());
+    }
 }
