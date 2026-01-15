@@ -40,220 +40,228 @@ import com.parser.bank.Repository.CategoryRepository;
 @Service
 public class TransactionService {
 
-	private final TransactionRepository transactionRepository;
+    private final TransactionRepository transactionRepository;
 
     private final CategoryRepository categoryRepository;
 
-	final List<String> categoryList = Arrays.asList("bills", "entertainment", "food", "utility", "travel", "snacks",
-			"groceries", "fruits", "rent", "auto", "bus", "tea", "dmart", "haircut", "swiggy", "zepto", "zomato",
-			"blinkit", "instamart", "shopping");
+    final List<String> categoryList = Arrays.asList("bills", "entertainment", "food", "utility", "travel", "snacks",
+            "groceries", "fruits", "rent", "auto", "bus", "tea", "dmart", "haircut", "swiggy", "zepto", "zomato",
+            "blinkit", "instamart", "shopping", "exclude", "savings");
 
-	public TransactionService(TransactionRepository transactionRepository, CategoryRepository categoryRepository) {
-		this.transactionRepository = transactionRepository;
+    public TransactionService(TransactionRepository transactionRepository, CategoryRepository categoryRepository) {
+        this.transactionRepository = transactionRepository;
         this.categoryRepository = categoryRepository;
     }
 
-	public List<Transaction> processExcelFile(MultipartFile file) throws IOException {
-		List<Transaction> transactions = new ArrayList<>();
-		try (InputStream is = file.getInputStream(); Workbook workbook = new XSSFWorkbook(is)) {
+    public List<Transaction> processExcelFile(MultipartFile file) throws IOException {
+        List<Transaction> transactions = new ArrayList<>();
+        try (InputStream is = file.getInputStream(); Workbook workbook = new XSSFWorkbook(is)) {
 
-			Sheet sheet = workbook.getSheetAt(0); // Assuming data is on the first sheet
-			Iterator<Row> rows = sheet.iterator();
+            Sheet sheet = workbook.getSheetAt(0); // Assuming data is on the first sheet
+            Iterator<Row> rows = sheet.iterator();
 
-			// Assuming the first row is header, skip it
-			if (rows.hasNext()) {
-				rows.next();
-			}
+            // Assuming the first row is header, skip it
+            if (rows.hasNext()) {
+                rows.next();
+            }
 
-			while (rows.hasNext()) {
-				Row currentRow = rows.next();
-				// Skip empty rows
-				if (isRowEmpty(currentRow)) {
-					continue;
-				}
+            while (rows.hasNext()) {
+                Row currentRow = rows.next();
+                // Skip empty rows
+                if (isRowEmpty(currentRow)) {
+                    continue;
+                }
 
-				Transaction transaction = new Transaction();
-				// date
-				try {
-					Cell dateCell = currentRow.getCell(0);
-					if (dateCell != null && dateCell.getCellType() == CellType.NUMERIC
-							&& DateUtil.isCellDateFormatted(dateCell)) {
-						transaction.setTransactionDate(
-								dateCell.getDateCellValue().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
-					} else if (dateCell != null && dateCell.getCellType() == CellType.STRING) {
-						String dateString = dateCell.getStringCellValue();
-						DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/uu")
-								.withResolverStyle(ResolverStyle.STRICT);
-						LocalDate localDate = LocalDate.parse(dateString, formatter);
-						transaction.setTransactionDate(localDate);
-					}
+                Transaction transaction = new Transaction();
+                // date
+                try {
+                    Cell dateCell = currentRow.getCell(0);
+                    if (dateCell != null && dateCell.getCellType() == CellType.NUMERIC
+                            && DateUtil.isCellDateFormatted(dateCell)) {
+                        transaction.setTransactionDate(
+                                dateCell.getDateCellValue().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+                    } else if (dateCell != null && dateCell.getCellType() == CellType.STRING) {
+                        String dateString = dateCell.getStringCellValue();
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/uu")
+                                .withResolverStyle(ResolverStyle.STRICT);
+                        LocalDate localDate = LocalDate.parse(dateString, formatter);
+                        transaction.setTransactionDate(localDate);
+                    }
 
-					// Withdrawal Amount
-					Cell withdrawalCell = currentRow.getCell(4);
-					if (withdrawalCell != null) {
-						if (withdrawalCell.getCellType() == CellType.NUMERIC) {
-							transaction.setWithdrawalAmount(withdrawalCell.getNumericCellValue());
-						} else if (withdrawalCell.getCellType() == CellType.STRING) {
-							try {
-								transaction
-										.setWithdrawalAmount(Double.parseDouble(withdrawalCell.getStringCellValue()));
-							} catch (NumberFormatException e) {
-								transaction.setWithdrawalAmount(0.0); // Or handle error
-							}
-						}
-					} else {
-						transaction.setWithdrawalAmount(0.0);
-					}
+                    // Withdrawal Amount
+                    Cell withdrawalCell = currentRow.getCell(4);
+                    if (withdrawalCell != null) {
+                        if (withdrawalCell.getCellType() == CellType.NUMERIC) {
+                            transaction.setWithdrawalAmount(withdrawalCell.getNumericCellValue());
+                        } else if (withdrawalCell.getCellType() == CellType.STRING) {
+                            try {
+                                transaction
+                                        .setWithdrawalAmount(Double.parseDouble(withdrawalCell.getStringCellValue()));
+                            } catch (NumberFormatException e) {
+                                transaction.setWithdrawalAmount(0.0); // Or handle error
+                            }
+                        }
+                    } else {
+                        transaction.setWithdrawalAmount(0.0);
+                    }
 
-					// Deposit Amount
-					Cell depositCell = currentRow.getCell(5);
-					if (depositCell != null) {
-						if (depositCell.getCellType() == CellType.NUMERIC) {
-							transaction.setDepositAmount(depositCell.getNumericCellValue());
-						} else if (depositCell.getCellType() == CellType.STRING) {
-							try {
-								transaction.setDepositAmount(Double.parseDouble(depositCell.getStringCellValue()));
-							} catch (NumberFormatException e) {
-								transaction.setDepositAmount(0.0); // Or handle error
-							}
-						}
-					} else {
-						transaction.setDepositAmount(0.0);
-					}
+                    // Deposit Amount
+                    Cell depositCell = currentRow.getCell(5);
+                    if (depositCell != null) {
+                        if (depositCell.getCellType() == CellType.NUMERIC) {
+                            transaction.setDepositAmount(depositCell.getNumericCellValue());
+                        } else if (depositCell.getCellType() == CellType.STRING) {
+                            try {
+                                transaction.setDepositAmount(Double.parseDouble(depositCell.getStringCellValue()));
+                            } catch (NumberFormatException e) {
+                                transaction.setDepositAmount(0.0); // Or handle error
+                            }
+                        }
+                    } else {
+                        transaction.setDepositAmount(0.0);
+                    }
 
-					// Closing Balance
-					Cell closingBalanceCell = currentRow.getCell(6);
-					if (closingBalanceCell != null) {
-						if (closingBalanceCell.getCellType() == CellType.NUMERIC) {
-							transaction.setClosingBalance(closingBalanceCell.getNumericCellValue());
-						} else if (closingBalanceCell.getCellType() == CellType.STRING) {
-							try {
-								transaction
-										.setClosingBalance(Double.parseDouble(closingBalanceCell.getStringCellValue()));
-							} catch (NumberFormatException e) {
-								transaction.setClosingBalance(0.0); // Or handle error
-							}
-						}
-					} else {
-						transaction.setClosingBalance(0.0);
-					}
+                    // Closing Balance
+                    Cell closingBalanceCell = currentRow.getCell(6);
+                    if (closingBalanceCell != null) {
+                        if (closingBalanceCell.getCellType() == CellType.NUMERIC) {
+                            transaction.setClosingBalance(closingBalanceCell.getNumericCellValue());
+                        } else if (closingBalanceCell.getCellType() == CellType.STRING) {
+                            try {
+                                transaction
+                                        .setClosingBalance(Double.parseDouble(closingBalanceCell.getStringCellValue()));
+                            } catch (NumberFormatException e) {
+                                transaction.setClosingBalance(0.0); // Or handle error
+                            }
+                        }
+                    } else {
+                        transaction.setClosingBalance(0.0);
+                    }
 
-					Cell refNoCell = currentRow.getCell(2);
-					if (refNoCell != null) {
-						if (refNoCell.getCellType() == CellType.NUMERIC) {
-							transaction.setId(String.valueOf(refNoCell.getNumericCellValue()));
-						} else if (refNoCell.getCellType() == CellType.STRING) {
-							try {
-								transaction.setId(refNoCell.getStringCellValue());
-							} catch (NumberFormatException e) {
-								System.out.println(e);
+                    // Description (assuming column 4)
+                    Cell descriptionCell = currentRow.getCell(1);
+                    String description;
+                    if (descriptionCell != null) {
+                        transaction.setDescription(descriptionCell.getStringCellValue());
+                        transaction.setCategory(this.setCategory(descriptionCell.getStringCellValue()));
+                        description = descriptionCell.getStringCellValue();
+                    } else {
+                        description = "";
+                    }
+
+
+                    Cell refNoCell = currentRow.getCell(2);
+                    if (refNoCell != null) {
+                        if (refNoCell.getCellType() == CellType.NUMERIC) {
+                            transaction.setId(String.valueOf(refNoCell.getNumericCellValue() + description));
+                        } else if (refNoCell.getCellType() == CellType.STRING) {
+                            try {
+                                transaction.setId(refNoCell.getStringCellValue() + description);
+                            } catch (NumberFormatException e) {
+                                System.out.println(e);
 //								transaction.setClosingBalance(0.0); // Or handle error
-							}
-						}
-					} else {
-						continue;
-					}
+                            }
+                        }
+                    } else {
+                        continue;
+                    }
 
-					// Description (assuming column 4)
-					Cell descriptionCell = currentRow.getCell(1);
-					if (descriptionCell != null) {
+                    if (transaction.getCategory().equalsIgnoreCase("exclude") || transaction.getCategory().equalsIgnoreCase("savings")) {
+                        transaction.setInclude(false);
+                    } else
+                        transaction.setInclude(true);
+                    transactions.add(transaction);
+                } catch (Exception e) {
+                    // Log the error and potentially skip the row or throw a custom exception
+                    System.err
+                            .println("Error processing row: " + currentRow.getRowNum() + ". Error: " + e.getMessage());
+                }
+            }
+        }
 
-						transaction.setDescription(descriptionCell.getStringCellValue());
-						transaction.setCategory(this.setCategory(descriptionCell.getStringCellValue()));
-					}
+        return transactionRepository.saveAll(transactions);
+    }
 
-					transactions.add(transaction);
-				} catch (Exception e) {
-					// Log the error and potentially skip the row or throw a custom exception
-					System.err
-							.println("Error processing row: " + currentRow.getRowNum() + ". Error: " + e.getMessage());
-				}
-			}
-		}
+    private String setCategory(String description) {
+        String[] descArray = description.split("-");
+        String category = descArray[descArray.length - 1];
+        if (categoryList.contains(category.toLowerCase())) {
+            return category;
+        } else
+            return "miscellaneous";
 
-		return transactionRepository.saveAll(transactions);
-	}
+    }
 
-	private String setCategory(String description) {
-		String[] descArray = description.split("-");
-		String category = descArray[descArray.length - 1];
-		if (categoryList.contains(category.toLowerCase())) {
-			return category;
-		} else
-			return "miscellaneous";
+    private boolean isRowEmpty(Row row) {
+        if (row == null) {
+            return true;
+        }
+        for (int cellNum = row.getFirstCellNum(); cellNum < row.getLastCellNum(); cellNum++) {
+            Cell cell = row.getCell(cellNum);
+            if (cell != null && cell.getCellType() != CellType.BLANK && cell.getRichStringCellValue().length() > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
 
-	}
+    public Map<String, Double> calculateMonthlySpend() {
+        List<Transaction> allTransactions = transactionRepository.findAll();
 
-	private boolean isRowEmpty(Row row) {
-		if (row == null) {
-			return true;
-		}
-		for (int cellNum = row.getFirstCellNum(); cellNum < row.getLastCellNum(); cellNum++) {
-			Cell cell = row.getCell(cellNum);
-			if (cell != null && cell.getCellType() != CellType.BLANK && cell.getRichStringCellValue().length() > 0) {
-				return false;
-			}
-		}
-		return true;
-	}
+        return allTransactions.stream().filter(t -> t.getWithdrawalAmount() != null && t.getWithdrawalAmount() > 0)
+                .collect(Collectors.groupingBy(transaction -> {
+                    LocalDate date = transaction.getTransactionDate();
+                    return date.getYear() + "-" + String.format("%02d", date.getMonthValue());
+                }, Collectors.summingDouble(Transaction::getWithdrawalAmount)));
+    }
 
-	public Map<String, Double> calculateMonthlySpend() {
-		List<Transaction> allTransactions = transactionRepository.findAll();
+    public List<Transaction> getAllTransactions() {
+        return transactionRepository.findAll();
+    }
 
-		return allTransactions.stream().filter(t -> t.getWithdrawalAmount() != null && t.getWithdrawalAmount() > 0)
-				.collect(Collectors.groupingBy(transaction -> {
-					LocalDate date = transaction.getTransactionDate();
-					return date.getYear() + "-" + String.format("%02d", date.getMonthValue());
-				}, Collectors.summingDouble(Transaction::getWithdrawalAmount)));
-	}
+    public ResponseEntity<UploadResponse> setCategoryForTransactions() {
+        List<Transaction> allTransactions = transactionRepository.findAll();
+        allTransactions.forEach(t -> {
+            t.setCategory(setCategory(t.getDescription()));
+            transactionRepository.save(t);
+        });
+        UploadResponse response = new UploadResponse("File uploaded and processed successfully.",
+                allTransactions.size());
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
 
-	public List<Transaction> getAllTransactions() {
-		return transactionRepository.findAll();
-	}
+    public MonthlySummaryResponse getCustomPeriodSummary(Date startDate, Date endDate) {
+        if (startDate == null || endDate == null) {
+            return new MonthlySummaryResponse();
+        }
+        Map<String, Double> categorySpendMap = new HashMap<>();
 
-	public ResponseEntity<UploadResponse> setCategoryForTransactions() {
-		List<Transaction> allTransactions = transactionRepository.findAll();
-		allTransactions.forEach(t -> {
-			t.setCategory(setCategory(t.getDescription()));
-			transactionRepository.save(t);
-		});
-		UploadResponse response = new UploadResponse("File uploaded and processed successfully.",
-				allTransactions.size());
-		return ResponseEntity.status(HttpStatus.OK).body(response);
-	}
+        List<Transaction> monthlyTransactions = transactionRepository.findByTransactionDateBetween(startDate.toLocalDate(), endDate.toLocalDate());
+        double totalWithdrawal = monthlyTransactions.stream().filter(t -> t.getWithdrawalAmount() != null && !t.getCategory().equalsIgnoreCase("savings") && !t.getCategory().equalsIgnoreCase("exclude"))
+                .mapToDouble(Transaction::getWithdrawalAmount).sum();
 
-	public MonthlySummaryResponse getCustomPeriodSummary(Date startDate, Date endDate) {
-		if(startDate == null || endDate == null) {
-			return new MonthlySummaryResponse();
-		}
-		Map<String, Double> categorySpendMap = new HashMap<>();
+        monthlyTransactions.stream().forEach(t -> {
+            if (t.getWithdrawalAmount() != null && t.getWithdrawalAmount() > 0) {
+                String category = t.getCategory();
+                if (!categorySpendMap.containsKey(category)) {
+                    categorySpendMap.put(category, t.getWithdrawalAmount());
+                } else {
+                    Double spend = categorySpendMap.get(category);
+                    categorySpendMap.put(category, t.getWithdrawalAmount() + spend);
+                }
+            }
+        });
 
-		List<Transaction> monthlyTransactions = transactionRepository.findByTransactionDateBetween(startDate.toLocalDate(), endDate.toLocalDate());
-		double totalWithdrawal = monthlyTransactions.stream().filter(t -> t.getWithdrawalAmount() != null)
-				.mapToDouble(Transaction::getWithdrawalAmount).sum();
+        double totalDeposit = monthlyTransactions.stream().filter(t -> t.getDepositAmount() != null)
+                .mapToDouble(Transaction::getDepositAmount).sum();
 
-		monthlyTransactions.stream().forEach(t -> {
-			if (t.getWithdrawalAmount() != null && t.getWithdrawalAmount() > 0) {
-				String category = t.getCategory();
-				if (!categorySpendMap.containsKey(category)) {
-					categorySpendMap.put(category, t.getWithdrawalAmount());
-				} else {
-					Double spend = categorySpendMap.get(category);
-					categorySpendMap.put(category, t.getWithdrawalAmount() + spend);
-				}
-			}
-		});
+        List<Transaction> actualTransactions = monthlyTransactions.stream().filter( t -> !t.getCategory().equalsIgnoreCase("savings") && !t.getCategory().equalsIgnoreCase("exclude")).toList();
+        long numberOfTransactions = actualTransactions.size();
+        // Calculate net flow (deposit - withdrawal)
+        double netFlow = totalDeposit - totalWithdrawal;
 
-		double totalDeposit = monthlyTransactions.stream().filter(t -> t.getDepositAmount() != null)
-				.mapToDouble(Transaction::getDepositAmount).sum();
-
-		long numberOfTransactions = monthlyTransactions.size();
-
-		// Calculate net flow (deposit - withdrawal)
-		double netFlow = totalDeposit - totalWithdrawal;
-		
-		return new MonthlySummaryResponse(totalWithdrawal, totalDeposit, numberOfTransactions, netFlow, categorySpendMap);
-	}
+        return new MonthlySummaryResponse(totalWithdrawal, totalDeposit, numberOfTransactions, netFlow, categorySpendMap);
+    }
 
 //	public MonthlySummaryResponse getCustomPeriodSummary(Date startDate, Date endDate) {
 //
@@ -261,36 +269,41 @@ public class TransactionService {
 //		return new MonthlySummaryResponse();
 //	}
 
-	public Map<String, Double> getYearlyFinancialSummary(int year) {
-		YearMonth yearMonth = YearMonth.of(year, 1);
-		YearMonth yearLastMonth = YearMonth.of(year, 12);
-		LocalDate startDate = yearMonth.atDay(1);
-		LocalDate endDate = yearLastMonth.atEndOfMonth();
+    public Map<String, Double> getYearlyFinancialSummary(int year) {
+        YearMonth yearMonth = YearMonth.of(year, 1);
+        YearMonth yearLastMonth = YearMonth.of(year, 12);
+        LocalDate startDate = yearMonth.atDay(1);
+        LocalDate endDate = yearLastMonth.atEndOfMonth();
 
-		List<Transaction> monthlyTransactions = transactionRepository.findByTransactionDateBetween(startDate, endDate);
+        List<Transaction> monthlyTransactions = transactionRepository.findByTransactionDateBetweenAndInclude(startDate, endDate, true);
 //		List<Transaction> top10Transactions = monthlyTransactions.stream().forEach();
 
-		double totalWithdrawal = monthlyTransactions.stream().filter(t -> t.getWithdrawalAmount() != null)
-				.mapToDouble(Transaction::getWithdrawalAmount).sum();
+        double totalWithdrawal = monthlyTransactions.stream().filter(t -> t.getWithdrawalAmount() != null)
+                .mapToDouble(Transaction::getWithdrawalAmount).sum();
 
-		double totalDeposit = monthlyTransactions.stream().filter(t -> t.getDepositAmount() != null)
-				.mapToDouble(Transaction::getDepositAmount).sum();
+        double totalDeposit = monthlyTransactions.stream().filter(t -> t.getDepositAmount() != null)
+                .mapToDouble(Transaction::getDepositAmount).sum();
 
-		long numberOfTransactions = monthlyTransactions.size();
+        long numberOfTransactions = monthlyTransactions.size();
 
-		// Calculate net flow (deposit - withdrawal)
-		double netFlow = totalDeposit - totalWithdrawal;
+        // Calculate net flow (deposit - withdrawal)
+        double netFlow = totalDeposit - totalWithdrawal;
 
-		Map<String, Double> summary = new HashMap<>();
-		summary.put("total_withdrawal", totalWithdrawal);
-		summary.put("total_deposit", totalDeposit);
-		summary.put("num_transactions", (double) numberOfTransactions); // Convert long to Double
-		summary.put("net_flow", netFlow);
+        Map<String, Double> summary = new HashMap<>();
+        summary.put("total_withdrawal", totalWithdrawal);
+        summary.put("total_deposit", totalDeposit);
+        summary.put("num_transactions", (double) numberOfTransactions); // Convert long to Double
+        summary.put("net_flow", netFlow);
 
-		return summary;
-	}
+        return summary;
+    }
 
     public ResponseEntity<List<Category>> getCategory() {
         return ResponseEntity.status(HttpStatus.OK).body(categoryRepository.findAll());
+    }
+
+    public ResponseEntity<Transaction> updateInclude(Long id, Transaction t) {
+        Transaction tr = transactionRepository.save(t);
+        return ResponseEntity.status(HttpStatus.OK).body(tr);
     }
 }
