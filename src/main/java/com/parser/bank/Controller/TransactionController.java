@@ -8,6 +8,7 @@ import com.parser.bank.DTO.CustomSummaryRequest;
 import com.parser.bank.Entity.Category;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.interceptor.TransactionAttributeSourceAdvisor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -80,8 +81,8 @@ public class TransactionController {
 
     @PostMapping("/customSummary")
     public ResponseEntity<MonthlySummaryResponse> getCustomSummary(@RequestBody CustomSummaryRequest dateObject) {
-		Date startDate = dateObject.getStartdate();
-		Date endDate = dateObject.getEnddate();
+        Date startDate = dateObject.getStartdate();
+        Date endDate = dateObject.getEnddate();
         try {
             MonthlySummaryResponse summary = transactionService.getCustomPeriodSummary(startDate, endDate);
             return ResponseEntity.ok(summary);
@@ -111,11 +112,21 @@ public class TransactionController {
         }
     }
 
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Transaction> updateInclude(@PathVariable long id, @RequestBody Transaction t) {
+        try {
+            return transactionService.updateInclude(id, t);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Transaction());
+        }
+    }
+
     @GetMapping("/category")
     public ResponseEntity<List<Category>> getCategory() {
         try {
             return transactionService.getCategory();
-        }catch (Exception e) {
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ArrayList<>());
         }
     }
